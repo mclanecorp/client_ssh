@@ -17,20 +17,26 @@ var (
 var connectCmd = &cobra.Command{
 	Use:   "connect",
 	Short: "Connect to a remote SSH server",
-	Long:  "Establish a connection to a remote SSH server. Currently a placeholder.",
+	Long:  "Establish a connection to a remote SSH server and start an interactive session.",
 	Run: func(cmd *cobra.Command, args []string) {
-		if keyPath == "" {
-			fmt.Println("No key provided, nothing to do for now.")
-			return
-		}
-
-		config, err := buildSSHConfig(user, keyPath)
+		config, err := buildSSHConfig(user, keyPath, password)
 		if err != nil {
-			fmt.Println("Error building SSH config:", err)
+			fmt.Println("Erreur configuration SSH:", err)
 			return
 		}
 
-		fmt.Println("SSH config built successfully for user:", config.User)
+		client, err := connectSSH(host, port, config)
+		if err != nil {
+			fmt.Println("Erreur connexion SSH:", err)
+			return
+		}
+		defer client.Close()
+
+		fmt.Println("Connexion SSH établie avec succès sur", host)
+
+		if err := startInteractiveSession(client); err != nil {
+			fmt.Println("Erreur session interactive:", err)
+		}
 	},
 }
 
@@ -39,7 +45,7 @@ func init() {
 	connectCmd.Flags().StringVar(&user, "user", "", "SSH username (required)")
 	connectCmd.Flags().IntVar(&port, "port", 22, "SSH port (default 22)")
 	connectCmd.Flags().StringVar(&keyPath, "key", "", "Path to private key")
-	connectCmd.Flags().StringVar(&password, "password", "", "Password (not recommended)")
+	connectCmd.Flags().StringVar(&password, "password", "", "Password (if no key)")
 
 	connectCmd.MarkFlagRequired("host")
 	connectCmd.MarkFlagRequired("user")
