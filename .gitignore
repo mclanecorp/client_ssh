@@ -1,0 +1,22 @@
+# Binaries
+myssh
+*.exe
+
+# Build directories
+/bin/
+/obj/
+/out/
+
+# Vendor directory (si jamais tu utilises go mod vendor)
+vendor/
+
+# Go workspace files
+*.test
+*.coverprofile
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
