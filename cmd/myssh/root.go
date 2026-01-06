@@ -14,6 +14,7 @@ var (
 	sshPort     int
 	sshPassword string
 	sshKey      string
+	profileName string
 )
 
 var rootCmd = &cobra.Command{
@@ -38,6 +39,8 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&sshPort, "port", 22, "SSH port")
 	rootCmd.PersistentFlags().StringVar(&sshPassword, "password", "", "SSH password")
 	rootCmd.PersistentFlags().StringVar(&sshKey, "key", "", "SSH private key path")
+	rootCmd.PersistentFlags().StringVar(&profileName,"profile","","SSH profile name")
+
 
 	// Ajouter les sous-commandes
 	rootCmd.AddCommand(connectCmd)

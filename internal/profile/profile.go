@@ -125,3 +125,29 @@ func Delete(name string) error {
 
 	return nil
 }
+
+func ResolveSSHConfig(
+	profileName string,
+	host string,
+	port int,
+	user string,
+	password string,
+	key string,
+) (string, int, string, string, string, error) {
+
+	if profileName == "" {
+		return host, port, user, password, key, nil
+	}
+
+	p, err := Get(profileName)
+	if err != nil {
+		return "", 0, "", "", "", err
+	}
+
+	return p.Host, p.Port, p.User, p.Password, p.KeyPath, nil
+}
+
+// Get est un alias de GetByName pour simplifier ResolveSSHConfig
+func Get(name string) (*Profile, error) {
+	return GetByName(name)
+}
