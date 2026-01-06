@@ -24,21 +24,10 @@ func Create(p Profile) error {
 	INSERT INTO profiles (name, host, port, user, password, key_path)
 	VALUES (?, ?, ?, ?, ?, ?)
 	`
-
-	_, err := config.DB.Exec(
-		query,
-		p.Name,
-		p.Host,
-		p.Port,
-		p.User,
-		p.Password,
-		p.KeyPath,
-	)
-
+	_, err := config.DB.Exec(query, p.Name, p.Host, p.Port, p.User, p.Password, p.KeyPath)
 	if err != nil {
 		return fmt.Errorf("cannot create profile: %w", err)
 	}
-
 	return nil
 }
 
@@ -49,20 +38,10 @@ func GetByName(name string) (*Profile, error) {
 	FROM profiles
 	WHERE name = ?
 	`
-
 	row := config.DB.QueryRow(query, name)
 
 	var p Profile
-	err := row.Scan(
-		&p.ID,
-		&p.Name,
-		&p.Host,
-		&p.Port,
-		&p.User,
-		&p.Password,
-		&p.KeyPath,
-	)
-
+	err := row.Scan(&p.ID, &p.Name, &p.Host, &p.Port, &p.User, &p.Password, &p.KeyPath)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("profile '%s' not found", name)
 	}
@@ -80,7 +59,6 @@ func List() ([]Profile, error) {
 	FROM profiles
 	ORDER BY name
 	`
-
 	rows, err := config.DB.Query(query)
 	if err != nil {
 		return nil, err
@@ -88,32 +66,19 @@ func List() ([]Profile, error) {
 	defer rows.Close()
 
 	var profiles []Profile
-
 	for rows.Next() {
 		var p Profile
-		if err := rows.Scan(
-			&p.ID,
-			&p.Name,
-			&p.Host,
-			&p.Port,
-			&p.User,
-			&p.Password,
-			&p.KeyPath,
-		); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Host, &p.Port, &p.User, &p.Password, &p.KeyPath); err != nil {
 			return nil, err
 		}
 		profiles = append(profiles, p)
 	}
-
 	return profiles, nil
 }
 
 // Delete supprime un profil par son nom
 func Delete(name string) error {
-	result, err := config.DB.Exec(
-		`DELETE FROM profiles WHERE name = ?`,
-		name,
-	)
+	result, err := config.DB.Exec(`DELETE FROM profiles WHERE name = ?`, name)
 	if err != nil {
 		return err
 	}
@@ -126,28 +91,45 @@ func Delete(name string) error {
 	return nil
 }
 
-func ResolveSSHConfig(
-	profileName string,
-	host string,
-	port int,
-	user string,
-	password string,
-	key string,
-) (string, int, string, string, string, error) {
+// Update met à jour uniquement les champs passés
+func Update(p *Profile, updates map[string]interface{}) error {
+	if host, ok := updates["host"].(string); ok && host != "" {
+		p.Host = host
+	}
+	if port, ok := updates["port"].(int); ok && port != 0 {
+		p.Port = port
+	}
+	if user, ok := updates["user"].(string); ok && user != "" {
+		p.User = user
+	}
+	if password, ok := updates["password"].(string); ok && password != "" {
+		p.Password = password
+	}
+	if key, ok := updates["key"].(string); ok && key != "" {
+		p.KeyPath = key
+	}
 
+	_, err := config.DB.Exec(`
+		UPDATE profiles 
+		SET host = ?, port = ?, user = ?, password = ?, key_path = ?
+		WHERE name = ?
+	`, p.Host, p.Port, p.User, p.Password, p.KeyPath, p.Name)
+
+	if err != nil {
+		return fmt.Errorf("impossible de mettre à jour le profil: %w", err)
+	}
+
+	return nil
+}
+
+// ResolveSSHConfig pour utiliser profil ou flags CLI
+func ResolveSSHConfig(profileName string, host string, port int, user string, password string, key string) (string, int, string, string, string, error) {
 	if profileName == "" {
 		return host, port, user, password, key, nil
 	}
-
-	p, err := Get(profileName)
+	p, err := GetByName(profileName)
 	if err != nil {
 		return "", 0, "", "", "", err
 	}
-
 	return p.Host, p.Port, p.User, p.Password, p.KeyPath, nil
-}
-
-// Get est un alias de GetByName pour simplifier ResolveSSHConfig
-func Get(name string) (*Profile, error) {
-	return GetByName(name)
 }
