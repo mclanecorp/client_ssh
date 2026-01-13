@@ -3,6 +3,10 @@ package main
 import (
 	"fmt"
 
+	"myssh/internal/profile"
+	"myssh/internal/scp"
+	"myssh/internal/ssh"
+
 	"github.com/spf13/cobra"
 )
 
@@ -24,15 +28,31 @@ var scpUploadCmd = &cobra.Command{
 	Use:   "upload",
 	Short: "Upload a file to a remote server",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := scpUpload(
+		// Résolution SSH via profil ou flags
+		host, port, user, password, key, err := profile.ResolveSSHConfig(
+			profileName,
 			sshHost,
 			sshPort,
 			sshUser,
 			sshPassword,
 			sshKey,
-			scpLocalPath,
-			scpRemotePath,
 		)
+		if err != nil {
+			fmt.Println("Erreur profil:", err)
+			return
+		}
+
+		// Configuration SSH
+		cfg := ssh.Config{
+			Host:     host,
+			Port:     port,
+			User:     user,
+			Password: password,
+			KeyPath:  key,
+		}
+
+		// Upload SCP
+		err = scp.Upload(cfg, scpLocalPath, scpRemotePath)
 		if err != nil {
 			fmt.Println("Erreur SCP upload:", err)
 		} else {
@@ -45,15 +65,31 @@ var scpDownloadCmd = &cobra.Command{
 	Use:   "download",
 	Short: "Download a file from a remote server",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := scpDownload(
+		// Résolution SSH via profil ou flags
+		host, port, user, password, key, err := profile.ResolveSSHConfig(
+			profileName,
 			sshHost,
 			sshPort,
 			sshUser,
 			sshPassword,
 			sshKey,
-			scpRemotePath,
-			scpLocalPath,
 		)
+		if err != nil {
+			fmt.Println("Erreur profil:", err)
+			return
+		}
+
+		// Configuration SSH
+		cfg := ssh.Config{
+			Host:     host,
+			Port:     port,
+			User:     user,
+			Password: password,
+			KeyPath:  key,
+		}
+
+		// Download SCP
+		err = scp.Download(cfg, scpRemotePath, scpLocalPath)
 		if err != nil {
 			fmt.Println("Erreur SCP download:", err)
 		} else {

@@ -40,9 +40,4 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&sshPassword, "password", "", "SSH password")
 	rootCmd.PersistentFlags().StringVar(&sshKey, "key", "", "SSH private key path")
 	rootCmd.PersistentFlags().StringVar(&profileName,"profile","","SSH profile name")
-
-
-	// Ajouter les sous-commandes
-	rootCmd.AddCommand(connectCmd)
-	rootCmd.AddCommand(scpCmd)
 }

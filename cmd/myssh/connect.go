@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"myssh/internal/profile"
+	"myssh/internal/ssh"
 
 	"github.com/spf13/cobra"
 )
@@ -27,15 +28,17 @@ var connectCmd = &cobra.Command{
 			return
 		}
 
-		// Construction config SSH
-		config, err := buildSSHConfig(user, key, password)
-		if err != nil {
-			fmt.Println("Erreur config SSH:", err)
-			return
+		// Configuration SSH
+		cfg := ssh.Config{
+			Host:     host,
+			Port:     port,
+			User:     user,
+			Password: password,
+			KeyPath:  key,
 		}
 
 		// Connexion SSH
-		client, err := connectSSH(host, port, config)
+		client, err := ssh.Connect(cfg)
 		if err != nil {
 			fmt.Println("Erreur connexion SSH:", err)
 			return
@@ -43,7 +46,7 @@ var connectCmd = &cobra.Command{
 		defer client.Close()
 
 		// Session interactive
-		if err := startInteractiveSession(client); err != nil {
+		if err := client.StartInteractiveSession(); err != nil {
 			fmt.Println("Erreur session interactive:", err)
 		}
 	},
